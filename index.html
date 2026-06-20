@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Circly · Marketing Dashboard</title>
+<style>
+  :root{
+    --ink:#0F2430; --ink-soft:#33474F; --muted:#67787F;
+    --bg:#F4F7F6; --card:#FFFFFF; --line:#E4EAE8; --line-soft:#EEF2F1;
+    --primary:#11B5A4; --primary-dark:#0C9385; --primary-soft:#E5F6F4;
+    --creation:#11B5A4; --capture:#3B82C4; --conversion:#E08A19; --retention:#8B5CF6;
+    --scale:#11B5A4; --optimize:#E08A19; --stop:#DC4B4B;
+    --pos:#0C9385; --neg:#DC4B4B;
+    --radius:14px; --shadow:0 1px 2px rgba(15,36,48,.05),0 8px 24px -12px rgba(15,36,48,.12);
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:var(--font);color:var(--ink);background:var(--bg);-webkit-font-smoothing:antialiased;line-height:1.45}
+
+  /* Header */
+  .topbar{background:var(--card);border-bottom:1px solid var(--line);padding:18px 32px}
+  .topbar-inner{max-width:1340px;margin:0 auto;display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap}
+  .brand{display:flex;align-items:center;gap:11px}
+  .logo-mark{width:34px;height:34px;flex:0 0 auto;display:block}
+  .brand-name{font-family:'Rockwell','Roboto Slab','Courier New',serif;font-weight:600;font-size:19px;letter-spacing:.01em;color:var(--ink)}
+  .brand-sub{font-size:13px;color:var(--muted);font-weight:500;border-left:1px solid var(--line);padding-left:11px;margin-left:2px}
+  .topbar-right{display:flex;align-items:center;gap:14px}
+  .stand{font-size:12px;color:var(--muted)}
+  .period{display:inline-flex;background:var(--line-soft);border-radius:10px;padding:3px;gap:2px}
+  .period button{font-family:var(--font);font-size:12.5px;font-weight:600;color:var(--muted);background:transparent;border:none;border-radius:8px;padding:6px 12px;cursor:pointer;transition:.15s}
+  .period button.active{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(15,36,48,.12)}
+
+  /* Tabs */
+  .tabs{max-width:1340px;margin:0 auto;padding:0 32px;display:flex;gap:4px;border-bottom:1px solid var(--line)}
+  .tab{font-family:var(--font);font-size:14px;font-weight:600;color:var(--muted);background:none;border:none;padding:15px 18px 13px;cursor:pointer;border-bottom:2.5px solid transparent;margin-bottom:-1px;transition:.15s}
+  .tab:hover{color:var(--ink-soft)}
+  .tab.active{color:var(--primary-dark);border-bottom-color:var(--primary)}
+
+  .wrap{max-width:1340px;margin:0 auto;padding:24px 32px 60px}
+  .panel{display:none} .panel.active{display:block}
+
+  .section-title{font-size:12px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:26px 0 12px}
+  .section-title:first-child{margin-top:0}
+
+  /* Hero KPI cards */
+  .kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .kpi{background:var(--card);border:1px solid var(--line);border-top:3px solid var(--line);border-radius:var(--radius);padding:16px 14px 15px;box-shadow:var(--shadow);text-align:center}
+  .kpi .label{font-size:11.5px;font-weight:600;color:var(--muted);line-height:1.3;min-height:30px}
+  .kpi .val{font-size:26px;font-weight:750;letter-spacing:-.02em;margin-top:6px}
+  .kpi .sub{font-size:11px;color:var(--muted);margin-top:4px}
+  .kpi-grid .kpi:nth-child(1){border-top-color:var(--creation)}
+  .kpi-grid .kpi:nth-child(2){border-top-color:var(--capture)}
+  .kpi-grid .kpi:nth-child(3){border-top-color:var(--primary-dark)}
+  .kpi-grid .kpi:nth-child(4){border-top-color:var(--conversion)}
+  .kpi-grid .kpi:nth-child(5){border-top-color:var(--retention)}
+  .delta{display:inline-block;font-size:11.5px;font-weight:700;margin-top:8px;padding:2px 7px;border-radius:6px}
+  .delta.pos{color:var(--pos);background:var(--primary-soft)}
+  .delta.neg{color:var(--neg);background:#FBEAEA}
+
+  .cards-2{display:grid;grid-template-columns:1.3fr 1fr;gap:16px}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:18px;box-shadow:var(--shadow)}
+  .card h3{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:14px;letter-spacing:-.01em}
+
+  /* Funnel Quality (main) — horizontale Stufenbalken */
+  .fq{display:flex;flex-direction:column;gap:9px}
+  .fq-row{display:flex;align-items:center;gap:12px}
+  .fq-name{width:86px;text-align:right;font-size:12px;font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+  .fq-bar-wrap{flex:1;display:flex}
+  .fq-bar{height:34px;min-width:52px;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding:0 12px;color:#fff;font-weight:750;font-size:14px;letter-spacing:-.01em;transition:width .55s cubic-bezier(.4,0,.2,1),filter .2s;box-shadow:0 1px 2px rgba(15,36,48,.12)}
+  .fq-row:hover .fq-bar{filter:brightness(1.07)}
+  .fq-cvr{width:106px;flex:0 0 auto;line-height:1.2}
+  .fq-cvr b{font-size:13px;color:var(--ink-soft);font-weight:750}
+  .fq-cvr span{display:block;font-size:10px;color:var(--muted);font-weight:600;letter-spacing:.02em}
+  .fq-cvr.win b{color:var(--primary-dark)}
+
+  /* Top channels bars */
+  .ch-row{display:flex;align-items:center;gap:10px;margin-bottom:13px}
+  .ch-rank{width:16px;font-size:12px;font-weight:700;color:var(--muted)}
+  .ch-name{width:150px;font-size:12.5px;font-weight:600;color:var(--ink-soft);flex:0 0 auto;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .ch-track{flex:1;background:var(--line-soft);border-radius:7px;height:22px;overflow:hidden}
+  .ch-fill{height:100%;border-radius:7px;transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .ch-val{width:92px;text-align:right;font-size:13px;font-weight:750;color:var(--ink);display:flex;flex-direction:column;line-height:1.15}
+  .ch-share{font-size:10.5px;color:var(--muted);font-weight:600}
+
+  /* Retention tiles */
+  .ret-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
+  .ret{background:var(--line-soft);border-radius:11px;padding:14px 10px;text-align:center;transition:transform .15s,background .15s}
+  .ret:hover{transform:translateY(-1px);background:#E9EFED}
+  .ret .rv{font-size:22px;font-weight:750;letter-spacing:-.02em}
+  .ret .rl{font-size:11px;font-weight:600;color:var(--muted);margin-top:3px}
+
+  /* Decision panel */
+  .dec-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .dec-col{border-radius:11px;padding:13px;border:1px solid var(--line)}
+  .dec-col h4{font-size:12px;font-weight:700;display:flex;align-items:center;gap:7px;margin-bottom:9px}
+  .dec-col h4 i{width:9px;height:9px;border-radius:50%}
+  .dec-chip{display:block;font-size:12px;font-weight:600;color:var(--ink-soft);background:var(--card);border:1px solid var(--line);border-radius:7px;padding:6px 9px;margin-bottom:6px}
+  .dec-col.scale{background:rgba(17,181,164,.06)} .dec-col.optimize{background:rgba(224,138,25,.06)} .dec-col.stop{background:rgba(220,75,75,.06)}
+
+  /* Funnel view */
+  .funnel-rows{display:flex;flex-direction:column;gap:0}
+  .frow{display:flex;align-items:center;gap:12px;padding:3px 0}
+  .frow .flabel{width:96px;font-size:12.5px;font-weight:700;color:var(--ink-soft);flex:0 0 auto}
+  .frow .ftrack{flex:1;display:flex;align-items:center}
+  .frow .fbar{height:38px;border-radius:8px;display:flex;align-items:center;padding:0 12px;color:#fff;font-weight:750;font-size:14px;min-width:54px;transition:width .4s}
+  .frow .fcount{margin-left:10px;font-size:13px;font-weight:700}
+  .frow .fdelta{width:74px;text-align:right;flex:0 0 auto}
+  .fconnect{display:flex;align-items:center;gap:8px;padding:2px 0 2px 108px;color:var(--muted)}
+  .fconnect .cvrpill{font-size:11.5px;font-weight:700;color:var(--ink-soft);background:var(--line-soft);padding:2px 9px;border-radius:6px}
+  .fconnect .cvrmom{font-size:10.5px;font-weight:600}
+
+  /* Tables */
+  table{width:100%;border-collapse:collapse;font-size:12.5px}
+  thead th{text-align:left;font-size:10.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);padding:9px 10px;border-bottom:1.5px solid var(--line);white-space:nowrap;cursor:pointer;user-select:none}
+  thead th.num{text-align:right} thead th.no-sort{cursor:default}
+  thead th .arr{opacity:.4;font-size:9px;margin-left:3px}
+  thead th.sorted .arr{opacity:1;color:var(--primary-dark)}
+  tbody td{padding:10px;border-bottom:1px solid var(--line-soft);vertical-align:middle}
+  tbody td.num{text-align:right;font-variant-numeric:tabular-nums;font-weight:600}
+  tbody tr:hover{background:#FBFCFC}
+  .cell-name{font-weight:650;color:var(--ink)}
+  .chtag{font-size:10.5px;font-weight:600;color:var(--ink-soft);background:var(--line-soft);padding:2px 8px;border-radius:5px;white-space:nowrap}
+  .badge{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:6px;white-space:nowrap}
+  .badge.Scale{color:#fff;background:var(--scale)} .badge.Optimize{color:#fff;background:var(--optimize)} .badge.Stop{color:#fff;background:var(--stop)}
+  .cvrcell{font-weight:700}
+
+  /* Rollup cards */
+  .roll-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-bottom:8px}
+  .roll{background:var(--card);border:1px solid var(--line);border-left:4px solid var(--line);border-radius:11px;padding:12px;box-shadow:var(--shadow)}
+  .roll.Scale{border-left-color:var(--scale)} .roll.Optimize{border-left-color:var(--optimize)} .roll.Stop{border-left-color:var(--stop)}
+  .roll .rn{font-size:11px;font-weight:700;color:var(--ink);line-height:1.25;min-height:28px}
+  .roll .rbig{font-size:18px;font-weight:750;letter-spacing:-.02em;margin-top:6px}
+  .roll .rlab{font-size:10px;color:var(--muted);font-weight:600}
+  .roll .rmeta{font-size:10.5px;color:var(--muted);margin-top:5px}
+
+  .toolbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:12px;flex-wrap:wrap}
+  .toolbar .lf{display:flex;align-items:center;gap:10px}
+  select{appearance:none;-webkit-appearance:none;font-family:var(--font);font-size:13px;font-weight:600;color:var(--ink);background:var(--card);border:1px solid var(--line);border-radius:9px;padding:8px 30px 8px 12px;cursor:pointer;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'><path d='M3 4.5L6 7.5L9 4.5' stroke='%2367787F' stroke-width='1.5' fill='none' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 11px center}
+  .legend-note{font-size:11.5px;color:var(--muted)}
+  .legend-note b{color:var(--ink-soft)}
+
+  /* Retention & Advocacy tab */
+  .ra-top{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+  .ra-card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;box-shadow:var(--shadow);text-align:center;transition:transform .15s,box-shadow .15s}
+  .ra-card:hover{transform:translateY(-2px);box-shadow:0 10px 26px -12px rgba(15,36,48,.28)}
+  .ra-card .ra-label{font-size:11.5px;font-weight:600;color:var(--muted);min-height:30px}
+  .ra-card .ra-big{font-size:26px;font-weight:750;letter-spacing:-.02em;margin-top:6px}
+  .ra-card .ra-sub{font-size:11px;color:var(--muted);margin-top:4px}
+  .ring{width:92px;height:92px;margin:2px auto 0;display:block}
+  .ring-bg{fill:none;stroke:var(--line-soft);stroke-width:8}
+  .ring-fg{fill:none;stroke-width:8;stroke-linecap:round;transform:rotate(-90deg);transform-origin:50% 50%;transition:stroke-dashoffset .6s cubic-bezier(.4,0,.2,1)}
+  .ring-txt{font-size:19px;font-weight:750;fill:var(--ink);text-anchor:middle;font-family:var(--font)}
+  .feat-row{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+  .feat-name{width:180px;font-size:12px;font-weight:600;color:var(--ink-soft);flex:0 0 auto}
+  .feat-track{flex:1;background:var(--line-soft);border-radius:6px;height:18px;overflow:hidden}
+  .feat-fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--primary),var(--primary-dark));transition:width .5s cubic-bezier(.4,0,.2,1)}
+  .feat-val{width:42px;text-align:right;font-size:12px;font-weight:700}
+  .stack{display:flex;height:30px;border-radius:8px;overflow:hidden;margin:4px 0 10px}
+  .stack>div{display:flex;align-items:center;justify-content:center;color:#fff;font-size:11px;font-weight:700;transition:width .5s;min-width:0}
+  .stack-legend{display:flex;gap:16px;flex-wrap:wrap}
+  .stack-legend span{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--ink-soft);font-weight:500}
+  .stack-legend i{width:10px;height:10px;border-radius:3px}
+  .usage-row{display:flex;gap:28px;margin-top:16px;padding-top:14px;border-top:1px solid var(--line-soft)}
+  .usage-item .uv{font-size:21px;font-weight:750;letter-spacing:-.02em}
+  .usage-item .ul{font-size:11px;color:var(--muted);font-weight:600;margin-top:1px}
+  .adv-grid{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:16px}
+  .nps-score{font-size:34px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+
+  .note{font-size:11.5px;color:#9AA8A4;margin-top:14px}
+  .kpi,.roll{transition:transform .15s,box-shadow .15s}
+  .kpi:hover,.roll:hover{transform:translateY(-2px);box-shadow:0 10px 26px -12px rgba(15,36,48,.28)}
+  @keyframes rise{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+  .kpi{animation:rise .4s ease both}
+  .kpi:nth-child(2){animation-delay:.05s}.kpi:nth-child(3){animation-delay:.1s}.kpi:nth-child(4){animation-delay:.15s}.kpi:nth-child(5){animation-delay:.2s}
+  @media(max-width:980px){.kpi-grid{grid-template-columns:repeat(2,1fr)}.cards-2{grid-template-columns:1fr}.roll-grid{grid-template-columns:repeat(2,1fr)}.ret-grid,.dec-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand">
+      <svg class="logo-mark" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg" aria-label="Circly">
+        <circle cx="41" cy="43" r="27" stroke="#0F2430" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="128 42" transform="rotate(32 41 43)"/>
+        <circle cx="60" cy="58" r="27" stroke="#0F2430" stroke-width="6.5" stroke-linecap="round" stroke-dasharray="146 24" transform="rotate(206 60 58)"/>
+      </svg>
+      <span class="brand-name">circly</span>
+      <span class="brand-sub">Marketing Performance Dashboard</span>
+    </div>
+    <div class="topbar-right">
+      <span class="stand">Stand: 19.06.2026 · Quelle: Pipedrive (CRM)</span>
+      <div class="period" id="period">
+        <button data-p="monat">Monat</button>
+        <button data-p="quartal" class="active">Quartal</button>
+        <button data-p="ytd">YTD</button>
+      </div>
+    </div>
+  </div>
+</header>
+
+<nav class="tabs" id="tabs">
+  <button class="tab active" data-v="main">Main KPIs</button>
+  <button class="tab" data-v="funnel">Funnel View</button>
+  <button class="tab" data-v="camp">Kampagnen View</button>
+  <button class="tab" data-v="ra">Retention &amp; Advocacy</button>
+</nav>
+
+<div class="wrap">
+  <!-- MAIN -->
+  <section class="panel active" id="p-main">
+    <div class="section-title" id="main-period-label">Überblick</div>
+    <div class="kpi-grid" id="kpiGrid"></div>
+
+    <div class="section-title">Funnel Quality</div>
+    <div class="card"><div class="fq" id="fq"></div></div>
+
+    <div class="cards-2" style="margin-top:16px">
+      <div class="card"><h3>Top Channels nach Pipeline</h3><div id="topChannels"></div>
+        <div class="note">Breite = Pipeline-Beitrag · Farbe = Status (Scale / Optimize / Stop)</div></div>
+      <div class="card"><h3>Retention &amp; Advocacy</h3><div class="ret-grid" id="retGrid"></div></div>
+    </div>
+
+    <div class="section-title">Key Decision · Scale / Optimize / Stop</div>
+    <div class="card"><div class="dec-grid" id="decGrid"></div>
+      <div class="note">Ableitung: Cost-per-SQO ≤ 4.000 € → <b>Scale</b> · 4.000–6.500 € → <b>Optimize</b> · &gt; 6.500 € oder 0 SQO → <b>Stop</b> (aus den Kampagnendaten).</div>
+    </div>
+  </section>
+
+  <!-- FUNNEL -->
+  <section class="panel" id="p-funnel">
+    <div class="section-title">Funnel Health · MoM-Vergleich</div>
+    <div class="card">
+      <div class="funnel-rows" id="funnelRows"></div>
+      <div class="note">Balkenbreite = Volumen je Stufe. Delta = Veränderung zur Vorperiode. CVR = Conversion-Rate zur nächsten Stufe.</div>
+    </div>
+
+    <div class="section-title">Channel CVR · wo der Funnel je Kanal trägt</div>
+    <div class="card">
+      <table id="chCvrTable">
+        <thead><tr>
+          <th class="no-sort">Kanal</th>
+          <th class="num no-sort">Pipeline</th>
+          <th class="num no-sort">MQL→SQL</th>
+          <th class="num no-sort">SQL→SQO</th>
+          <th class="num no-sort">MQL→SQO</th>
+          <th class="num no-sort">Cost / SQO</th>
+          <th class="no-sort">Entscheidung</th>
+        </tr></thead>
+        <tbody id="chCvrBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- CAMPAIGNS -->
+  <section class="panel" id="p-camp">
+    <div class="section-title">Channel-Rollup · aktuelles Quartal</div>
+    <div class="roll-grid" id="rollGrid"></div>
+
+    <div class="section-title">Kampagnen · Detail</div>
+    <div class="card">
+      <div class="toolbar">
+        <div class="lf">
+          <label class="legend-note">Kanal filtern:</label>
+          <select id="campFilter"><option value="">Alle Kanäle</option></select>
+        </div>
+        <span class="legend-note">Klick auf Spaltenkopf zum Sortieren · <b>Ziel Cost/SQO ≤ 4.000 €</b></span>
+      </div>
+      <table id="campTable">
+        <thead><tr>
+          <th data-k="name">Kampagne <span class="arr">▾</span></th>
+          <th data-k="channel">Kanal <span class="arr">▾</span></th>
+          <th class="num" data-k="spend">Spend <span class="arr">▾</span></th>
+          <th class="num" data-k="mql">MQL <span class="arr">▾</span></th>
+          <th class="num" data-k="sql">SQL <span class="arr">▾</span></th>
+          <th class="num" data-k="sqo">SQO <span class="arr">▾</span></th>
+          <th class="num" data-k="pipeline">Pipeline <span class="arr">▾</span></th>
+          <th class="num" data-k="costMql">Cost/MQL <span class="arr">▾</span></th>
+          <th class="num" data-k="costSqo">Cost/SQO <span class="arr">▾</span></th>
+          <th class="num" data-k="mqlSqo">MQL→SQO <span class="arr">▾</span></th>
+          <th data-k="dec">Entscheidung <span class="arr">▾</span></th>
+        </tr></thead>
+        <tbody id="campBody"></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- RETENTION & ADVOCACY -->
+  <section class="panel" id="p-ra">
+    <div class="section-title" id="ra-period-label">Retention · Kundenerfolg sichern</div>
+    <div class="ra-top" id="raTop"></div>
+
+    <div class="cards-2" style="margin-top:18px">
+      <div class="card"><h3>Feature-Adoption im Detail</h3><div id="featList"></div></div>
+      <div class="card"><h3>Customer Health &amp; Usage</h3><div id="healthBox"></div></div>
+    </div>
+
+    <div class="section-title">Advocacy · Proof zurück in den Markt</div>
+    <div class="adv-grid" id="advBox"></div>
+  </section>
+</div>
+
+<script>
+/* ---------------- Data ---------------- */
+const STAGE_COLORS = ["#7CC9C0","#11B5A4","#3B82C4","#E08A19","#0F766E"];
+const STAGES = ["Lead","MQL","SQL","SQO","Customer"];
+const DEC_HEX = {Scale:"#11B5A4",Optimize:"#E08A19",Stop:"#DC4B4B"};
+const DEC_GRAD = {Scale:["#16C4B2","#0C9385"],Optimize:["#F0A22E","#D9810F"],Stop:["#E45B5B","#C73B3B"]};
+
+const PERIODS = {
+  monat: {label:"Diesen Monat (Juni 2026)",
+    kpis:[
+      {label:"Marketing-sourced Pipeline",v:180000,d:12,fmt:"eur"},
+      {label:"Marketing-influenced Pipeline",v:420000,d:8,fmt:"eur"},
+      {label:"Closed-Won Revenue",v:95000,d:15,fmt:"eur"},
+      {label:"CAC",v:4200,d:-6,down:true,fmt:"eurFull"},
+      {label:"Win Rate",v:24,d:2,unit:"pp",fmt:"pct"}],
+    funnel:[430,152,64,33,8], prev:[410,138,58,29,7],
+    ra:{activation:80,adoption:66,renewal:92,churn:1.9,nrr:109,nps:49,
+        d:{activation:2,adoption:2,renewal:1,churn:-0.2,nrr:1,nps:2},
+        promoters:60,passives:29,detractors:11,usersPerAcct:6.4,freq:4.7,
+        referrals:4,referralPipeline:31000,casePipeline:58000,
+        health:{healthy:65,atrisk:24,critical:11},
+        features:[["Bestellvorschläge akzeptiert",73],["Forecast aktiv genutzt",68],["ABC-Analyse",50],["Aktionsplanung",41]]}},
+  quartal: {label:"Dieses Quartal (Q2 2026)",
+    kpis:[
+      {label:"Marketing-sourced Pipeline",v:520000,d:18,fmt:"eur"},
+      {label:"Marketing-influenced Pipeline",v:1250000,d:11,fmt:"eur"},
+      {label:"Closed-Won Revenue",v:310000,d:22,fmt:"eur"},
+      {label:"CAC",v:4500,d:-4,down:true,fmt:"eurFull"},
+      {label:"Win Rate",v:26,d:3,unit:"pp",fmt:"pct"}],
+    funnel:[1240,430,180,92,24], prev:[1100,380,158,80,20],
+    ra:{activation:78,adoption:64,renewal:91,churn:2.1,nrr:108,nps:47,
+        d:{activation:3,adoption:5,renewal:1,churn:-0.3,nrr:4,nps:5},
+        promoters:58,passives:31,detractors:11,usersPerAcct:6.2,freq:4.6,
+        referrals:9,referralPipeline:84000,casePipeline:156000,
+        health:{healthy:62,atrisk:26,critical:12},
+        features:[["Bestellvorschläge akzeptiert",71],["Forecast aktiv genutzt",66],["ABC-Analyse",48],["Aktionsplanung",39]]}},
+  ytd: {label:"Year-to-Date (2026)",
+    kpis:[
+      {label:"Marketing-sourced Pipeline",v:1450000,d:9,fmt:"eur"},
+      {label:"Marketing-influenced Pipeline",v:3600000,d:7,fmt:"eur"},
+      {label:"Closed-Won Revenue",v:820000,d:14,fmt:"eur"},
+      {label:"CAC",v:4800,d:-2,down:true,fmt:"eurFull"},
+      {label:"Win Rate",v:25,d:1,unit:"pp",fmt:"pct"}],
+    funnel:[3420,1180,495,250,63], prev:[3050,1040,430,214,53],
+    ra:{activation:75,adoption:60,renewal:90,churn:2.3,nrr:106,nps:44,
+        d:{activation:4,adoption:6,renewal:2,churn:-0.4,nrr:5,nps:6},
+        promoters:56,passives:32,detractors:12,usersPerAcct:6.0,freq:4.4,
+        referrals:28,referralPipeline:245000,casePipeline:470000,
+        health:{healthy:60,atrisk:27,critical:13},
+        features:[["Bestellvorschläge akzeptiert",68],["Forecast aktiv genutzt",62],["ABC-Analyse",45],["Aktionsplanung",36]]}}
+};
+
+const CAMPAIGNS = [
+  {name:"Paid Search – Bestellvorschläge", channel:"Paid Search", spend:9800, mql:34, sql:16, sqo:8, pipeline:72000},
+  {name:"Paid Search – Absatzprognose", channel:"Paid Search", spend:7200, mql:26, sql:11, sqo:5, pipeline:45000},
+  {name:"Bing – High-Intent (Edge-Test)", channel:"Paid Search", spend:2400, mql:11, sql:6, sqo:3, pipeline:28000},
+  {name:"Partner Co-Webinar – ERP", channel:"Partner Webinars", spend:4500, mql:40, sql:22, sqo:13, pipeline:120000},
+  {name:"Webinar – Forecasting Readiness", channel:"Partner Webinars", spend:3200, mql:24, sql:10, sqo:5, pipeline:44000},
+  {name:"LinkedIn TLA – Dispo Kontrolle", channel:"LinkedIn ABM/TLA", spend:11500, mql:30, sql:12, sqo:6, pipeline:58000},
+  {name:"LinkedIn TLA – CFO ROI", channel:"LinkedIn ABM/TLA", spend:12800, mql:22, sql:8, sqo:3, pipeline:30000},
+  {name:"LinkedIn ABM – Supply Chain", channel:"LinkedIn ABM/TLA", spend:9500, mql:18, sql:7, sqo:2, pipeline:19000},
+  {name:"LinkedIn Retargeting", channel:"LinkedIn Retargeting", spend:6400, mql:28, sql:12, sqo:6, pipeline:54000},
+  {name:"SEO Promotion – Überbestand", channel:"SEO/Content", spend:1800, mql:20, sql:8, sqo:4, pipeline:36000},
+  {name:"Fachmedien – LZ Newsletter", channel:"Fachmedien/Newsletter", spend:8500, mql:18, sql:5, sqo:1, pipeline:9000}
+];
+const ROLL_TOTAL = CAMPAIGNS.reduce((s,c)=>s+c.pipeline,0);
+
+/* ---------------- Helpers ---------------- */
+function eur(v){ if(Math.abs(v)>=1e6) return (v/1e6).toLocaleString('de-DE',{minimumFractionDigits:2,maximumFractionDigits:2})+' Mio. €'; if(Math.abs(v)>=1e3) return Math.round(v/1e3).toLocaleString('de-DE')+'k €'; return Math.round(v).toLocaleString('de-DE')+' €'; }
+function eurFull(v){ return v===Infinity?'–':Math.round(v).toLocaleString('de-DE')+' €'; }
+function pct(v){ return v.toLocaleString('de-DE',{maximumFractionDigits:1})+' %'; }
+function fmtVal(k){ return k.fmt==='eur'?eur(k.v):k.fmt==='eurFull'?eurFull(k.v):pct(k.v); }
+function deltaChip(d,down,unit){ if(d==null) return ''; const up=d>=0; const good = down? !up : up; const arrow=up?'▲':'▼'; const u=unit==='pp'?' pp':' %'; return `<span class="delta ${good?'pos':'neg'}">${arrow} ${Math.abs(d)}${u}</span>`; }
+function decOf(costSqo,sqo){ return (sqo===0||costSqo>6500)?'Stop':costSqo>4000?'Optimize':'Scale'; }
+function calc(c){ const costMql=c.spend/c.mql; const costSqo=c.sqo>0?c.spend/c.sqo:Infinity; const mqlSqo=c.sqo/c.mql*100; return {...c,costMql,costSqo,mqlSqo,dec:decOf(costSqo,c.sqo)}; }
+function rollup(){ const m={}; CAMPAIGNS.forEach(c=>{const r=m[c.channel]||(m[c.channel]={channel:c.channel,spend:0,mql:0,sql:0,sqo:0,pipeline:0});r.spend+=c.spend;r.mql+=c.mql;r.sql+=c.sql;r.sqo+=c.sqo;r.pipeline+=c.pipeline;});
+  return Object.values(m).map(r=>{r.mqlSql=r.mql?r.sql/r.mql*100:0;r.sqlSqo=r.sql?r.sqo/r.sql*100:0;r.mqlSqo=r.mql?r.sqo/r.mql*100:0;r.costSqo=r.sqo?r.spend/r.sqo:Infinity;r.dec=decOf(r.costSqo,r.sqo);return r;}).sort((a,b)=>b.pipeline-a.pipeline); }
+function decColor(d){ return d==='Scale'?'var(--scale)':d==='Optimize'?'var(--optimize)':'var(--stop)'; }
+function cvrColor(v,good,mid){ return v>=good?'var(--scale)':v>=mid?'var(--optimize)':'var(--stop)'; }
+
+/* ---------------- State ---------------- */
+let state={period:'quartal',view:'main',sort:{k:'pipeline',dir:'desc'},filter:''};
+
+/* ---------------- Main ---------------- */
+function renderMain(){
+  const P=PERIODS[state.period];
+  document.getElementById('main-period-label').textContent='Überblick · '+P.label;
+  document.getElementById('kpiGrid').innerHTML = P.kpis.map(k=>`
+    <div class="kpi"><div class="label">${k.label}</div>
+      <div class="val">${fmtVal(k)}</div>
+      ${deltaChip(k.d,k.down,k.unit)}<div class="sub">vs. Vorperiode</div></div>`).join('');
+
+  // funnel quality — horizontale Stufenbalken (Breite ∝ Volumen), CVR rechts
+  const f=P.funnel, max=f[0], last=f.length-1; let fq='';
+  f.forEach((c,i)=>{
+    const w=(c/max*100).toFixed(1);
+    const right = i<last
+      ? `<b>${(f[i+1]/f[i]*100).toFixed(1)} %</b><span>→ ${STAGES[i+1]}</span>`
+      : `<b>${(f[last]/f[0]*100).toFixed(1)} %</b><span>Lead → Kunde</span>`;
+    fq+=`<div class="fq-row">
+      <div class="fq-name">${STAGES[i]}</div>
+      <div class="fq-bar-wrap"><div class="fq-bar" style="width:${w}%;background:${STAGE_COLORS[i]}" title="${STAGES[i]}: ${c.toLocaleString('de-DE')}">${c.toLocaleString('de-DE')}</div></div>
+      <div class="fq-cvr${i===last?' win':''}">${right}</div></div>`;
+  });
+  document.getElementById('fq').innerHTML=fq;
+
+  // top channels: Breite ∝ Pipeline, Farbe = Status, + Anteil in %
+  const roll=rollup(), top=roll.slice(0,5), maxp=Math.max(...top.map(r=>r.pipeline));
+  const totalP=roll.reduce((s,r)=>s+r.pipeline,0), factor=P.kpis[0].v/ROLL_TOTAL;
+  document.getElementById('topChannels').innerHTML=top.map((r,i)=>`
+    <div class="ch-row" title="${r.channel} · Cost/SQO ${eurFull(r.costSqo)} · ${r.dec}">
+      <span class="ch-rank">${i+1}</span><span class="ch-name">${r.channel}</span>
+      <span class="ch-track"><span class="ch-fill" style="width:${(r.pipeline/maxp*100).toFixed(1)}%;background:linear-gradient(90deg,${DEC_GRAD[r.dec][0]},${DEC_GRAD[r.dec][1]})"></span></span>
+      <span class="ch-val">${eur(r.pipeline*factor)}<span class="ch-share">${(r.pipeline/totalP*100).toFixed(0)} % Anteil</span></span></div>`).join('');
+
+  // retention summary
+  const ra=P.ra;
+  document.getElementById('retGrid').innerHTML=[['Activation',ra.activation+'%'],['Feature Adoption',ra.adoption+'%'],['Renewal',ra.renewal+'%'],['NPS',''+ra.nps]].map(([k,v])=>`
+    <div class="ret"><div class="rv">${v}</div><div class="rl">${k}</div></div>`).join('');
+
+  // decision (from rollup)
+  const groups={Scale:[],Optimize:[],Stop:[]}; roll.forEach(r=>groups[r.dec].push(r.channel));
+  const colDefs=[['scale','Scale','var(--scale)'],['optimize','Optimize','var(--optimize)'],['stop','Stop','var(--stop)']];
+  document.getElementById('decGrid').innerHTML=colDefs.map(([cls,key,col])=>`
+    <div class="dec-col ${cls}"><h4><i style="background:${col}"></i>${key}</h4>
+    ${groups[key].length?groups[key].map(n=>`<span class="dec-chip">${n}</span>`).join(''):'<span class="dec-chip" style="color:#A9B6B2">–</span>'}</div>`).join('');
+}
+
+/* ---------------- Funnel view ---------------- */
+function renderFunnel(){
+  const P=PERIODS[state.period], f=P.funnel, pv=P.prev, max=f[0];
+  let rows='';
+  f.forEach((c,i)=>{
+    const d=((c-pv[i])/pv[i]*100); const up=d>=0;
+    rows+=`<div class="frow"><div class="flabel">${STAGES[i]}</div>
+      <div class="ftrack"><div class="fbar" style="background:${STAGE_COLORS[i]};width:${Math.max(8,c/max*100)}%" title="${c.toLocaleString('de-DE')}">${c.toLocaleString('de-DE')}</div></div>
+      <div class="fdelta"><span class="delta ${up?'pos':'neg'}">${up?'▲':'▼'} ${Math.abs(d).toFixed(1)} %</span></div></div>`;
+    if(i<f.length-1){
+      const cvr=f[i+1]/f[i]*100, cvrPrev=pv[i+1]/pv[i]*100, dd=cvr-cvrPrev, u=dd>=0;
+      rows+=`<div class="fconnect"><span class="cvrpill">${STAGES[i]}→${STAGES[i+1]}: ${cvr.toFixed(1)} %</span>
+        <span class="cvrmom" style="color:${u?'var(--pos)':'var(--neg)'}">${u?'▲':'▼'} ${Math.abs(dd).toFixed(1)} pp MoM</span></div>`;
+    }
+  });
+  document.getElementById('funnelRows').innerHTML=rows;
+
+  const roll=rollup();
+  const factor=PERIODS[state.period].kpis[0].v/ROLL_TOTAL;
+  document.getElementById('chCvrBody').innerHTML=roll.map(r=>`
+    <tr><td class="cell-name">${r.channel}</td>
+      <td class="num">${eur(r.pipeline*factor)}</td>
+      <td class="num cvrcell" style="color:${cvrColor(r.mqlSql,45,35)}">${r.mqlSql.toFixed(0)} %</td>
+      <td class="num cvrcell" style="color:${cvrColor(r.sqlSqo,50,40)}">${r.sqlSqo.toFixed(0)} %</td>
+      <td class="num cvrcell" style="color:${cvrColor(r.mqlSqo,22,15)}">${r.mqlSqo.toFixed(0)} %</td>
+      <td class="num">${eurFull(r.costSqo)}</td>
+      <td><span class="badge ${r.dec}">${r.dec}</span></td></tr>`).join('');
+}
+
+/* ---------------- Campaigns ---------------- */
+function renderCamp(){
+  const roll=rollup();
+  document.getElementById('rollGrid').innerHTML=roll.map(r=>`
+    <div class="roll ${r.dec}"><div class="rn">${r.channel}</div>
+      <div class="rbig">${eurFull(r.costSqo)}</div><div class="rlab">Cost / SQO</div>
+      <div class="rmeta">${eur(r.pipeline)} Pipeline · ${r.sqo} SQO<br><span class="badge ${r.dec}" style="margin-top:5px;display:inline-block">${r.dec}</span></div></div>`).join('');
+
+  // filter options
+  const sel=document.getElementById('campFilter');
+  if(sel.options.length<=1){ [...new Set(CAMPAIGNS.map(c=>c.channel))].forEach(ch=>{const o=document.createElement('option');o.value=ch;o.textContent=ch;sel.appendChild(o);}); }
+
+  let data=CAMPAIGNS.map(calc);
+  if(state.filter) data=data.filter(c=>c.channel===state.filter);
+  const {k,dir}=state.sort; const mul=dir==='asc'?1:-1;
+  data.sort((a,b)=>{ let x=a[k],y=b[k]; if(typeof x==='string') return x.localeCompare(y)*mul; return (x-y)*mul; });
+
+  document.getElementById('campBody').innerHTML=data.map(c=>`
+    <tr><td class="cell-name">${c.name}</td>
+      <td><span class="chtag">${c.channel}</span></td>
+      <td class="num">${eurFull(c.spend)}</td>
+      <td class="num">${c.mql}</td><td class="num">${c.sql}</td><td class="num">${c.sqo}</td>
+      <td class="num">${eur(c.pipeline)}</td>
+      <td class="num">${eurFull(c.costMql)}</td>
+      <td class="num" style="color:${c.costSqo<=4000?'var(--scale)':c.costSqo<=6500?'var(--optimize)':'var(--stop)'}">${eurFull(c.costSqo)}</td>
+      <td class="num">${c.mqlSqo.toFixed(0)} %</td>
+      <td><span class="badge ${c.dec}">${c.dec}</span></td></tr>`).join('');
+
+  document.querySelectorAll('#campTable thead th').forEach(th=>{ th.classList.toggle('sorted',th.dataset.k===k); const a=th.querySelector('.arr'); if(a) a.textContent = th.dataset.k===k ? (dir==='asc'?'▴':'▾') : '▾'; });
+}
+
+/* ---------------- Retention & Advocacy ---------------- */
+function ring(val,color){ const r=34,c=2*Math.PI*r,off=c*(1-val/100);
+  return `<svg viewBox="0 0 80 80" class="ring"><circle cx="40" cy="40" r="${r}" class="ring-bg"/>
+    <circle cx="40" cy="40" r="${r}" stroke="${color}" class="ring-fg" stroke-dasharray="${c.toFixed(1)}" stroke-dashoffset="${off.toFixed(1)}"/>
+    <text x="40" y="46" class="ring-txt">${val}%</text></svg>`; }
+function ringCard(label,val,d,color,sub){ return `<div class="ra-card"><div class="ra-label">${label}</div>${ring(val,color)}${deltaChip(d,false,'pp')}<div class="ra-sub">${sub}</div></div>`; }
+function statCard(label,valStr,d,down,sub){ return `<div class="ra-card"><div class="ra-label">${label}</div><div class="ra-big">${valStr}</div>${deltaChip(d,down,'pp')}<div class="ra-sub">${sub}</div></div>`; }
+
+function renderRA(){
+  const P=PERIODS[state.period], ra=P.ra;
+  document.getElementById('ra-period-label').textContent='Retention · Kundenerfolg sichern · '+P.label;
+  document.getElementById('raTop').innerHTML=
+    ringCard('Activation Rate',ra.activation,ra.d.activation,'#11B5A4','onboarded → aktiv')+
+    ringCard('Feature Adoption',ra.adoption,ra.d.adoption,'#3B82C4','nutzen Kern-Features')+
+    ringCard('Renewal Rate',ra.renewal,ra.d.renewal,'#0C9385','Verlängerungen')+
+    statCard('Churn (monatlich)',ra.churn.toLocaleString('de-DE')+' %',ra.d.churn,true,'Logo-Churn')+
+    statCard('Net Revenue Retention',ra.nrr+' %',ra.d.nrr,false,'inkl. Expansion');
+
+  document.getElementById('featList').innerHTML=ra.features.map(([n,v])=>`
+    <div class="feat-row"><span class="feat-name">${n}</span>
+      <span class="feat-track"><span class="feat-fill" style="width:${v}%"></span></span>
+      <span class="feat-val">${v}%</span></div>`).join('');
+
+  const h=ra.health;
+  document.getElementById('healthBox').innerHTML=`
+    <div class="stack">
+      <div style="width:${h.healthy}%;background:var(--scale)" title="Healthy">${h.healthy}%</div>
+      <div style="width:${h.atrisk}%;background:var(--optimize)" title="At-Risk">${h.atrisk}%</div>
+      <div style="width:${h.critical}%;background:var(--stop)" title="Critical">${h.critical}%</div></div>
+    <div class="stack-legend"><span><i style="background:var(--scale)"></i>Healthy</span><span><i style="background:var(--optimize)"></i>At-Risk</span><span><i style="background:var(--stop)"></i>Critical</span></div>
+    <div class="usage-row">
+      <div class="usage-item"><div class="uv">${ra.usersPerAcct.toLocaleString('de-DE')}</div><div class="ul">Ø aktive Nutzer / Account</div></div>
+      <div class="usage-item"><div class="uv">${ra.freq.toLocaleString('de-DE')}</div><div class="ul">Ø Nutzungstage / Woche</div></div></div>`;
+
+  document.getElementById('advBox').innerHTML=`
+    <div class="card"><h3>NPS</h3><div class="nps-score">${ra.nps}</div>
+      <div class="stack" style="margin-top:10px">
+        <div style="width:${ra.promoters}%;background:var(--scale)" title="Promoter">${ra.promoters}%</div>
+        <div style="width:${ra.passives}%;background:#A9B6B2" title="Passive">${ra.passives}%</div>
+        <div style="width:${ra.detractors}%;background:var(--stop)" title="Detraktor">${ra.detractors}%</div></div>
+      <div class="stack-legend"><span><i style="background:var(--scale)"></i>Promoter</span><span><i style="background:#A9B6B2"></i>Passive</span><span><i style="background:var(--stop)"></i>Detraktor</span></div></div>
+    <div class="card"><h3>Referrals</h3><div class="nps-score">${ra.referrals}</div><div class="ra-sub" style="margin-top:2px">Empfehlungen im Zeitraum</div>
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--line-soft)">
+        <div class="ra-big" style="font-size:20px;color:var(--primary-dark)">${eur(ra.referralPipeline)}</div>
+        <div class="ul">Referral-sourced Pipeline</div></div></div>
+    <div class="card"><h3>Case-influenced Pipeline</h3>
+      <div class="ra-big" style="font-size:28px;color:var(--primary-dark);margin-top:4px">${eur(ra.casePipeline)}</div>
+      <div class="ra-sub">Pipeline mit Case-Study-Kontakt im Verlauf</div>
+      <div class="note" style="margin-top:14px">Kundenerfolg als Proof zurück in den Markt gespielt — Cases, Referenzen, Peer-Webinare.</div></div>`;
+}
+
+/* ---------------- Wiring ---------------- */
+function renderAll(){ if(state.view==='main')renderMain(); else if(state.view==='funnel')renderFunnel(); else if(state.view==='ra')renderRA(); else renderCamp(); }
+
+document.querySelectorAll('#tabs .tab').forEach(t=>t.addEventListener('click',()=>{
+  state.view=t.dataset.v;
+  document.querySelectorAll('#tabs .tab').forEach(x=>x.classList.toggle('active',x===t));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+  document.getElementById('p-'+state.view).classList.add('active');
+  // period selector only relevant for main & funnel
+  document.getElementById('period').style.visibility = state.view==='camp' ? 'hidden':'visible';
+  renderAll();
+}));
+document.querySelectorAll('#period button').forEach(b=>b.addEventListener('click',()=>{
+  state.period=b.dataset.p;
+  document.querySelectorAll('#period button').forEach(x=>x.classList.toggle('active',x===b));
+  renderAll();
+}));
+document.getElementById('campFilter').addEventListener('change',e=>{state.filter=e.target.value;renderCamp();});
+document.querySelectorAll('#campTable thead th').forEach(th=>th.addEventListener('click',()=>{
+  const k=th.dataset.k; if(!k) return;
+  if(state.sort.k===k) state.sort.dir = state.sort.dir==='asc'?'desc':'asc';
+  else state.sort={k,dir: (k==='name'||k==='channel'||k==='dec')?'asc':'desc'};
+  renderCamp();
+}));
+
+renderAll();
+</script>
+</body>
+</html>
